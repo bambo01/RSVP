@@ -1,6 +1,6 @@
 import './App.css'
 import Input from './Input'
-
+import { Link } from "react-router-dom"
 function App() {
   return (
     <div
@@ -38,6 +38,12 @@ function App() {
                 alt="Birthday Pic 2"
                 className="w-32 sm:w-36 md:w-40 rounded-lg"
               />
+              <Link
+  to="/guestlist"
+  className="mt-4 inline-block bg-orange-300 hover:bg-orange-400 text-gray-900 px-4 py-2 rounded shadow font-semibold transition"
+>
+  View Guest List
+</Link>
             </div>
 
             {/* RSVP Form */}

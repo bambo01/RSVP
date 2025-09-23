@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const Input = () => {
   const [formData, setFormData] = useState({
@@ -6,7 +6,10 @@ const Input = () => {
     pax: ''
   })
 
-  const [display, setDisplay] = useState(true) // 👈 change to true to show form by default
+  const [display, setDisplay] = useState(true) // show form initially
+  const [rsvps, setRsvps] = useState([])       // list for table
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     const { id, value } = e.target
@@ -46,14 +49,50 @@ const Input = () => {
 
       alert(`RSVP submitted! Thank you ${formData.name}.`)
 
+      // Optimistically add the new entry so it shows up immediately
+      setRsvps(prev => [
+        { name: formData.name, numOfPax: Number(formData.pax) },
+        ...prev
+      ])
+
       setFormData({ name: '', pax: '' }) // reset form
-      setDisplay(false) // 👈 hide form after submit
+      setDisplay(false) // hide form after submit
 
     } catch (error) {
       console.error('Error submitting RSVP:', error)
       alert('Something went wrong. Please try again later.')
     }
   }
+
+  // Fetch the latest RSVPs once the thank-you screen is showing
+  useEffect(() => {
+    const fetchRsvps = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await fetch('https://animo-backend.up.railway.app/api/rsvp', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!res.ok) throw new Error('Failed to fetch RSVPs')
+        const list = await res.json()
+
+        // Expecting an array of objects with { name, numOfPax }
+        // If your API returns something like { data: [...] }, adjust accordingly:
+        // setRsvps(list.data ?? list)
+        setRsvps(Array.isArray(list) ? list : (list.data ?? []))
+      } catch (err) {
+        console.error(err)
+        setError('Could not load the RSVP list.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!display) {
+      fetchRsvps()
+    }
+  }, [display])
 
   return (
     <>
@@ -106,10 +145,56 @@ const Input = () => {
           </form>
         </div>
       ) : (
-        <div className=" flex flex-col gap-2">
-          <div className="text-white font-semibold flex justify-center text-2xl bg-orange-200 py-2 rounded shadow">
+        <div className="flex flex-col gap-4">
+          {/* Thank you banner */}
+          <div className="text-gray-900 font-semibold flex justify-center text-xl md:text-2xl bg-orange-200 py-3 rounded shadow">
             <h1>Thank you for your RSVP!</h1>
           </div>
+
+          {/* RSVP Table */}
+          <div className="bg-white/90 rounded-lg shadow p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold">Guest List</h2>
+              {loading && <span className="text-sm text-gray-500">Loading…</span>}
+            </div>
+
+            {error ? (
+              <div className="text-red-600">{error}</div>
+            ) : rsvps.length === 0 ? (
+              <div className="text-gray-600">No RSVPs yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">Name</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b"># of Pax</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rsvps.map((item, idx) => (
+                      <tr key={`${item.name}-${idx}`} className="odd:bg-white even:bg-gray-50">
+                        <td className="px-4 py-2 border-b text-gray-800">
+                          {item.name ?? item.fullName ?? '—'}
+                        </td>
+                        <td className="px-4 py-2 border-b text-gray-800">
+                          {item.numOfPax ?? item.pax ?? '0'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Optional: Back button to show form again */}
+          <button
+            onClick={() => setDisplay(true)}
+            className="self-start bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition"
+          >
+            Add another RSVP
+          </button>
         </div>
       )}
     </>
