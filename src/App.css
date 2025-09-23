@@ -1,7 +1,8 @@
-@import "tailwindcss";
-
-/* index.css */
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+
+.some-class {
+  color: red;
+}
 
 .font-bebas {
   font-family: "Bebas Neue", sans-serif;
