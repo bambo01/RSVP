@@ -66,7 +66,7 @@ const Input = () => {
             {/* Name input */}
             <div className="flex flex-col mt-2">
               <label htmlFor="name" className="mb-1 text-sm font-medium text-gray-700">
-                Name
+                Family Name:
               </label>
               <input 
                 id="name" 
